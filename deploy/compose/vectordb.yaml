@@ -3,20 +3,14 @@ services:
   # Milvus can be made GPU accelerated by uncommenting the lines as specified below
   milvus:
     container_name: milvus-standalone
-    image: milvusdb/milvus:${MILVUS_VERSION:-v2.6.5-gpu} # milvusdb/milvus:v2.6.5 for CPU
-    command: >
-      bash -lc 'tmpfile=$(mktemp) &&
-      sed "s/bucketName: a-bucket/bucketName: ${MINIO_BUCKET:-${NVINGEST_MINIO_BUCKET:-nv-ingest}}/" /milvus/configs/milvus.yaml > "$$tmpfile" &&
-      cat "$$tmpfile" > /milvus/configs/milvus.yaml &&
-      rm "$$tmpfile" &&
-      milvus run standalone'
+    image: milvusdb/milvus:${MILVUS_VERSION:-v2.6.2-gpu} # milvusdb/milvus:v2.6.2 for CPU
+    command: ["milvus", "run", "standalone"]
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: minio:9010
       KNOWHERE_GPU_MEM_POOL_SIZE: 2048;4096
     volumes:
       - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/milvus:/var/lib/milvus
-      # - ${MILVUS_CONFIG_FILE:-./milvus.yaml}:/milvus/configs/milvus.yaml
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
     #   interval: 30s
@@ -95,12 +89,9 @@ services:
       - xpack.license.self_generated.type=basic
       - network.host=0.0.0.0
       - cluster.routing.allocation.disk.threshold_enabled=false
-      # - ELASTIC_USERNAME=${APP_VECTORSTORE_USERNAME}
-      # - ELASTIC_PASSWORD=${APP_VECTORSTORE_PASSWORD}
     hostname: elasticsearch
     healthcheck:
       test: ["CMD", "curl", "-s", "-f", "http://localhost:9200/_cat/health"]
-      # test: ["CMD", "curl", "-s", "-f", "-u", "${APP_VECTORSTORE_USERNAME}:${APP_VECTORSTORE_PASSWORD}", "http://localhost:9200/_cat/health"]
       interval: 10s
       timeout: 1s
       retries: 10

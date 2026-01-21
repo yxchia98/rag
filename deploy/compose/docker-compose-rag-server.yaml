@@ -3,7 +3,7 @@ services:
   # Main orchestrator server which stiches together all calls to different services to fulfill the user request
   rag-server:
     container_name: rag-server
-    image: nvcr.io/nvstaging/blueprint/rag-server:${TAG:-2.4.0.rc2}
+    image: nvcr.io/nvidia/blueprint/rag-server:${TAG:-2.3.0}
     build:
       # Set context to repo's root directory
       context: ../../
@@ -35,29 +35,12 @@ services:
       APP_VECTORSTORE_NAME: ${APP_VECTORSTORE_NAME:-"milvus"}
       # Type of index to be used for vectorstore
       APP_VECTORSTORE_INDEXTYPE: ${APP_VECTORSTORE_INDEXTYPE:-"GPU_CAGRA"}
-      
       # Type of vectordb search to be used
       APP_VECTORSTORE_SEARCHTYPE: ${APP_VECTORSTORE_SEARCHTYPE:-"dense"} # Can be dense or hybrid
-      # Type of ranker to use for vector store in case of Hybrid Search
-      APP_VECTORSTORE_RANKER_TYPE: ${APP_VECTORSTORE_RANKER_TYPE:-"rrf"} # Can be "rrf" or "weighted"
-      # Weight for dense vector search in case of "weighted" Hybrid Search
-      APP_VECTORSTORE_DENSE_WEIGHT: ${APP_VECTORSTORE_DENSE_WEIGHT:-0.5}
-      # Weight for sparse vector search in case of "weighted" Hybrid Search
-      APP_VECTORSTORE_SPARSE_WEIGHT: ${APP_VECTORSTORE_SPARSE_WEIGHT:-0.5}
-      
       # Boolean to control GPU search for milvus vectorstore specific to rag-server
       APP_VECTORSTORE_ENABLEGPUSEARCH: ${APP_VECTORSTORE_ENABLEGPUSEARCH:-True}
       # ef: Parameter controlling query time/accuracy trade-off. Higher ef leads to more accurate but slower search.
       APP_VECTORSTORE_EF: ${APP_VECTORSTORE_EF:-100} # Must be greater or equal to VECTOR_DB_TOPK
-      # Username for vector store 
-      APP_VECTORSTORE_USERNAME: ${APP_VECTORSTORE_USERNAME:-""}
-      # Password for vector store
-      APP_VECTORSTORE_PASSWORD: ${APP_VECTORSTORE_PASSWORD:-""}
-      # Elasticsearch API key auth (optional). Prefer these over username/password when set.
-      # Provide either base64 APP_VECTORSTORE_APIKEY or split ID/SECRET.
-      APP_VECTORSTORE_APIKEY_ID: ${APP_VECTORSTORE_APIKEY_ID:-""}
-      APP_VECTORSTORE_APIKEY_SECRET: ${APP_VECTORSTORE_APIKEY_SECRET:-""}
-      APP_VECTORSTORE_APIKEY: ${APP_VECTORSTORE_APIKEY:-""}
       # vectorstore collection name to store embeddings
       COLLECTION_NAME: ${COLLECTION_NAME:-multimodal_data}
       APP_RETRIEVER_SCORETHRESHOLD: 0.25
@@ -72,11 +55,6 @@ services:
       LLM_MAX_TOKENS: ${LLM_MAX_TOKENS:-32768}
       LLM_TEMPERATURE: ${LLM_TEMPERATURE:-0}
       LLM_TOP_P: ${LLM_TOP_P:-1.0}
-      
-      # Enable/disable thinking/reasoning for nemotron-3-nano models (30b variant)
-      # Set to "true" to enable reasoning mode with reasoning_budget
-      # Set to "false" to disable reasoning and get direct answers
-      ENABLE_NEMOTRON_3_NANO_THINKING: ${ENABLE_NEMOTRON_3_NANO_THINKING:-true}
 
       ##===Query Rewriter Model specific configurations===
       APP_QUERYREWRITER_MODELNAME: ${APP_QUERYREWRITER_MODELNAME:-"nvidia/llama-3.3-nemotron-super-49b-v1.5"}
@@ -92,9 +70,8 @@ services:
 
       ##===Embedding Model specific configurations===
       # url on which embedding model is hosted. If "", Nvidia hosted API is used
-      APP_EMBEDDINGS_SERVERURL: ${APP_EMBEDDINGS_SERVERURL-"nemoretriever-embedding-ms:8000/v1"}
+      APP_EMBEDDINGS_SERVERURL: ${APP_EMBEDDINGS_SERVERURL-"nemoretriever-embedding-ms:8000"}
       APP_EMBEDDINGS_MODELNAME: ${APP_EMBEDDINGS_MODELNAME:-nvidia/llama-3.2-nv-embedqa-1b-v2}
-      APP_EMBEDDINGS_DIMENSIONS: ${APP_EMBEDDINGS_DIMENSIONS:-2048}
       # For VLM Embedding Model (Nemoretriever-1b-vlm-embed-v1)
       # APP_EMBEDDINGS_SERVERURL: ${APP_EMBEDDINGS_SERVERURL-"nemoretriever-vlm-embedding-ms:8000"}
       # APP_EMBEDDINGS_MODELNAME: ${APP_EMBEDDINGS_MODELNAME:-nvidia/llama-3.2-nemoretriever-1b-vlm-embed-v1}
@@ -109,34 +86,26 @@ services:
 
       ##===VLM Model specific configurations===
       ENABLE_VLM_INFERENCE: ${ENABLE_VLM_INFERENCE:-false}
-      # When true, allow falling back to LLM flow if no images are present in query/messages/context
-      # When false, always route generation through VLM when ENABLE_VLM_INFERENCE is true
-      VLM_TO_LLM_FALLBACK: ${VLM_TO_LLM_FALLBACK:-true}
+      # Reasoning gate on VLM response: off by default; enable to mitigate incorrect VLM outputs
+      ENABLE_VLM_RESPONSE_REASONING: ${ENABLE_VLM_RESPONSE_REASONING:-false}
       # Max images sent to VLM per request (query + context)
-      APP_VLM_MAX_TOTAL_IMAGES: ${APP_VLM_MAX_TOTAL_IMAGES:-5}
-      # VLM generation parameters
-      APP_VLM_MAX_TOKENS: ${APP_VLM_MAX_TOKENS:-8192}
-      APP_VLM_TEMPERATURE: ${APP_VLM_TEMPERATURE:-0.1}
-      APP_VLM_TOP_P: ${APP_VLM_TOP_P:-1.0}
+      APP_VLM_MAX_TOTAL_IMAGES: ${APP_VLM_MAX_TOTAL_IMAGES:-4}
+      # Max number of query images to include in VLM input
+      APP_VLM_MAX_QUERY_IMAGES: ${APP_VLM_MAX_QUERY_IMAGES:-1}
+      # Max number of context images to include in VLM input
+      APP_VLM_MAX_CONTEXT_IMAGES: ${APP_VLM_MAX_CONTEXT_IMAGES:-1}
+      # Use VLM only for final response generation
+      APP_VLM_RESPONSE_AS_FINAL_ANSWER: ${APP_VLM_RESPONSE_AS_FINAL_ANSWER:-false}
       # VLM server URL
       APP_VLM_SERVERURL: ${APP_VLM_SERVERURL-"http://vlm-ms:8000/v1"}
       # VLM model name
-      APP_VLM_MODELNAME: ${APP_VLM_MODELNAME:-"nvidia/nemotron-nano-12b-v2-vl"}
+      APP_VLM_MODELNAME: ${APP_VLM_MODELNAME:-"nvidia/llama-3.1-nemotron-nano-vl-8b-v1"}
 
       NVIDIA_API_KEY: ${NGC_API_KEY:?"NGC_API_KEY is required"}
 
-      # ==== Service-Specific API Keys (Optional) ====
-      # Set these to use different API keys for individual services.
-      # If not set or empty, services will use NVIDIA_API_KEY as fallback.
-      # Useful for multi-provider setups (e.g., OpenAI for LLM, NVIDIA for embeddings)
-      APP_LLM_APIKEY: ${APP_LLM_APIKEY:-""}
-      APP_EMBEDDINGS_APIKEY: ${APP_EMBEDDINGS_APIKEY:-""}
-      APP_RANKING_APIKEY: ${APP_RANKING_APIKEY:-""}
-      APP_QUERYREWRITER_APIKEY: ${APP_QUERYREWRITER_APIKEY:-""}
-      APP_FILTEREXPRESSIONGENERATOR_APIKEY: ${APP_FILTEREXPRESSIONGENERATOR_APIKEY:-""}
-      APP_VLM_APIKEY: ${APP_VLM_APIKEY:-""}
-      SUMMARY_LLM_APIKEY: ${SUMMARY_LLM_APIKEY:-""}
-      REFLECTION_LLM_APIKEY: ${REFLECTION_LLM_APIKEY:-""}
+      # Set LLM_API_KEY if non-NVIDIA hosted LLM API endpoint is being used
+      # If not set, NVIDIA_API_KEY will be used as fallback
+      LLM_API_KEY: ${LLM_API_KEY:-""}
 
       # Number of document chunks to insert in LLM prompt, used only when ENABLE_RERANKER is set to True
       APP_RETRIEVER_TOPK: ${APP_RETRIEVER_TOPK:-10}
@@ -148,9 +117,6 @@ services:
       # This will improve accuracy of the retrieiver pipeline but increase latency due to an additional LLM call
       ENABLE_QUERYREWRITER: ${ENABLE_QUERYREWRITER:-False}
 
-      # enable concatenating conversation history with current query for retrieval (when query rewriter is disabled)
-      MULTITURN_RETRIEVER_SIMPLE: ${MULTITURN_RETRIEVER_SIMPLE:-False}
-
       # Choose whether to enable citations in the response
       ENABLE_CITATIONS: ${ENABLE_CITATIONS:-True}
 
@@ -160,8 +126,8 @@ services:
       # NeMo Guardrails URL when ENABLE_GUARDRAILS is true
       NEMO_GUARDRAILS_URL: ${NEMO_GUARDRAILS_URL:-nemo-guardrails-microservice:7331}
 
-      # number of last n chat messages to consider from the provided conversation history (0 = no history)
-      CONVERSATION_HISTORY: ${CONVERSATION_HISTORY:-0}
+      # number of last n chat messages to consider from the provided conversation history
+      CONVERSATION_HISTORY: 5
 
       # Tracing
       APP_TRACING_ENABLED: ${APP_TRACING_ENABLED:-"False"}
@@ -195,11 +161,6 @@ services:
       # maximum recursion depth for iterative query decomposition
       MAX_RECURSION_DEPTH: ${MAX_RECURSION_DEPTH:-3}
 
-      # Redis configuration for summary status tracking
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: ${REDIS_PORT:-6379}
-      REDIS_DB: ${REDIS_DB:-0}
-
     ports:
       - "8081:8081"
     expose:
@@ -209,7 +170,7 @@ services:
   # Sample UI container which interacts with APIs exposed by rag-server container
   rag-frontend:
     container_name: rag-frontend
-    image: nvcr.io/nvstaging/blueprint/rag-frontend:${TAG:-2.4.0.rc2}
+    image: nvcr.io/nvidia/blueprint/rag-frontend:${TAG:-2.3.0}
     build:
       # Set context to repo's root directory
       context: ../../frontend
