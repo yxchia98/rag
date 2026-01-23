@@ -131,7 +131,8 @@ services:
       - "6379:6379"
 
   nv-ingest-ms-runtime:
-    image: nvcr.io/nvidia/nemo-microservices/nv-ingest:25.9.0
+    # image: nvcr.io/nvidia/nemo-microservices/nv-ingest:25.9.0
+    image: nvcr.io/mgsgvj1csvvp/nv-ingest-uv:25.9.0
     cpuset: "0-15"
     volumes:
       - ${DATASET_ROOT:-./data}:/workspace/data
